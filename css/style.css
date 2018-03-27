@@ -1,0 +1,51 @@
+body {
+  background: #636E72;
+}
+
+input {
+  background: #95A1A2;
+  position: absolute;
+  border-radius: 3px;
+  border: none;
+  height: 36px;
+  width: 250px;
+}
+
+h1 {
+  font-size: 16px;
+  color: #dfe6e9;
+}
+
+i {
+  position: absolute;
+  left: 570px;
+  top: 480px;
+  color: #95A1A2;
+  cursor: pointer;
+}
+
+.startUrlInput {
+  left: 10px;
+  top: 475px;
+}
+
+.targetInput {
+  left: 285px;
+  top: 475px;
+}
+
+.container {
+  height: 400px;
+  width: 575px;
+  overflow: scroll;
+  color: #dfe6e9;
+  font-size: 16px;
+  border-top: solid thin #95A1A2;
+  border-bottom: solid thin #95A1A2;
+}
+
+::placeholder {
+    color: #DFE6E9;
+    font-size: 14px;
+    opacity: 0.75;
+}

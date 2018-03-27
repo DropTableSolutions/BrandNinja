@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <h1 class="currentPage"></h1>
+
+    <div class="container"></div>
+
+    <input class="startUrlInput" type="text" placeholder="   Start Page">
+    <input class="targetInput" type="text" placeholder="   Search For..">
+
+    <i id="searchBtn" class="fa fa-search" style="font-size: 24px" aria-hidden="true"></i>
+
+    <script>
+      require('./js/crawler.js')
+    </script>
+  </body>
+</html>

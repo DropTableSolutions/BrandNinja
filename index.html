@@ -6,14 +6,57 @@
     <meta charset="UTF-8">
   </head>
   <body>
-    <h1 class="currentPage"></h1>
 
-    <div class="container"></div>
+    <div class="configuration">
 
-    <input class="startUrlInput" type="text" placeholder="   Start Page">
-    <input class="targetInput" type="text" placeholder="   Search For..">
+      <div class="option">
+        <i id="run" class="fa fa-play" style="font-size:18px"></i>
+        <p>Run Configuration</p>
+      </div>
 
-    <i id="searchBtn" class="fa fa-search" style="font-size: 24px" aria-hidden="true"></i>
+      <div class="option">
+        <i id="history" class="fa fa-book" style="font-size:18px"></i>
+        <p>Crawl History</p>
+      </div>
+
+      <div class="option">
+        <i id="file" class="fa fa-file-text" style="font-size:18px"></i>
+        <p>Import File</p>
+      </div>
+
+      <div class="option">
+        <i id="clear" class="fa fa-close" style="font-size:18px"></i>
+        <p>Clear Configuration</p>
+      </div>
+
+    </div>
+
+    <div class="crawlStatus">
+      <p>
+        CURRENT CRAWL STATUS
+        <br><br>
+        <span id="status">not running</span>
+      </p>
+    </div>
+
+    <div class="notifications">
+      <p id="message">Notifications</p>
+      <button id="reportBtn">Generate Report</button>
+    </div>
+
+    <div class="crawlInfo">
+      <h1>General Crawl Information</h1>
+      <input class="crawlNameInput" type="text" placeholder="   Crawl Name">
+      <input class="startUrlInput" type="text" placeholder="   Start Url">
+      <input class="keywordInput" type="text" placeholder="   Keywords i.e radford, xbox, ..">
+      <input class="crawlDepthInput" type="text" placeholder="   Maximum Crawl Depth">
+    </div>
+
+    <h3>change theme</h3>
+    <label class="toggle">
+      <input class="theme" type="checkbox" checked>
+      <span class="slider round"></span>
+    </label>
 
     <script>
       require('./js/crawler.js')

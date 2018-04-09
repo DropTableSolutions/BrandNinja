@@ -6,8 +6,12 @@ const cheerio = require('cheerio')
 const URL = require('url-parse')
 // module for accessing the file system
 const fs = require('fs')
-// module for opening files in node
+// module for openning files
 const opn = require('opn')
+// module for database connection
+const sqlite3 = require('sqlite3')
+// module to allow direct paths to fileSize
+const path = require('path')
 
 // the crawl report string to be written
 // to the txt file
@@ -43,6 +47,12 @@ var numPagesVisited = 0
 // pages that have yet to be visited
 var pagesToVisit = []
 
+//Inputs to be saved
+var savedName
+var savedStartingPages
+var savedKeywords
+var savedDepth
+
 const crawlNameInput = document.querySelector('.crawlNameInput')
 const startUrlInput = document.querySelector('.startUrlInput')
 const crawlDepthInput = document.querySelector('.crawlDepthInput')
@@ -50,9 +60,14 @@ const keywordInput = document.querySelector('.keywordInput')
 const notification = document.querySelector('#message')
 const status = document.querySelector('#status')
 const runButton = document.querySelector('#run')
+const saveButton = document.querySelector('#history')
+const loadButton = document.querySelector('#file')
 const clearButton = document.querySelector('#clear')
 const toggleSwitch = document.querySelector('.theme')
 const reportBtn = document.querySelector('#reportBtn')
+
+//Path to the searches database
+const dbPath = path.resolve(__dirname, 'Searches.db')
 
 toggleSwitch.addEventListener('click', function() {
   if (toggleSwitch.checked == false) {
@@ -83,6 +98,43 @@ clearButton.addEventListener('click', function() {
   crawlNameInput.value = ''
   keywordInput.value = ''
 })
+
+saveButton.addEventListener('click', function() {
+	savedName = crawlNameInput.value
+	savedStartingPages = startUrlInput.value
+	savedKeywords = keywordInput.value
+	savedDepth = crawlDepthInput.value
+	
+	let db = new sqlite3.Database('dbPath', sqlite3.OPEN_READWRITE, (err) => {
+		if (err) {
+			console.error(err.message);
+		}
+		console.log('Connected to the Searches database.');
+	});
+	
+	db.serialize(function() {
+		
+		db.run("CREATE TABLE if not exists saved_searches(name TEXT, links LONGTEXT, keywords LONGTEXT, depth INT)");
+		
+		var stmt = db.prepare("INSERT INTO saved_searches VALUES (?,?,?,?)");
+		stmt.run(savedName, savedStartingPages, savedKeywords, savedDepth);
+		stmt.finalize();
+		
+		db.each("SELECT name, depth FROM saved_searches", function(err, row) {
+			console.log(row.name + ", " + row.depth);
+		});
+	});
+	
+	db.close();
+	
+	notification.innerHTML = 'Search saved.';
+});
+
+loadButton.addEventListener('click', function() {
+	var searchName = prompt("Please enter the search name", "Search");
+	
+	console.log(searchName);
+});
 
 function crawl() {
   if (numPagesVisited >= maxPages) {

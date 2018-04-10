@@ -83,8 +83,24 @@ runButton.addEventListener('click', function() {
     }
 
   crawlName = crawlNameInput.value
+  //validate crawl name
+  if(crawlName == "") {
+      window.alert("Please enter a crawl name");
+      crawlNameInput.focus();
+      return false;
+  }
+
+
   startingPage = startUrlInput.value
+  
   keywords = keywordInput.value
+  //validate keyword(s)
+  if(keywords == "") {
+      window.alert("Please enter keyword(s)");
+      keywordInput.focus();
+      return false;
+  }
+  
   pagesToVisit.push(startingPage)
   crawl()
 })

@@ -8,6 +8,8 @@ const URL = require('url-parse')
 const fs = require('fs')
 // module for opening files in node
 const opn = require('opn')
+//module for validating URLs
+const validUrl = require('valid-url')
 
 // the crawl report string to be written
 // to the txt file
@@ -72,12 +74,12 @@ runButton.addEventListener('click', function() {
   maxPages = parseInt(crawlDepthInput.value)
   //validate crawl depth
   if(maxPages == ""){
-      window.alert("Please enter a depth value");
+      notification.innerHTML= 'Please enter a depth value'
       crawlDepthInput.focus();
-      return false;
+      //return false;
   }
     if(isNaN(maxPages) || maxPages < 1 ) {
-        window.alert("Invalid input");
+        notification.innerHTML= 'Invalid Input'
         crawlDepthInput.focus();
         return false;
     }
@@ -90,8 +92,12 @@ runButton.addEventListener('click', function() {
       return false;
   }
 
-
   startingPage = startUrlInput.value
+  //validate starting URL
+  if(startingPage == "") {
+      notification.innerHTML = 'Invalid URL'
+      startUrlInput.focus();
+  }
   
   keywords = keywordInput.value
   //validate keyword(s)

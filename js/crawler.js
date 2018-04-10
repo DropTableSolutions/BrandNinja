@@ -1,20 +1,38 @@
-// import the necessary node modules
-//test
 // module for making http/https requests
 const request = require('request')
 // module for easily parsing html
 const cheerio = require('cheerio')
 // module for creating url objects in node
 const URL = require('url-parse')
+// module for accessing the file system
+const fs = require('fs')
+// module for opening files in node
+const opn = require('opn')
+
+// the crawl report string to be written
+// to the txt file
+var reportString = ''
+
+// the keywords parsed and seperated
+// an array of strings
+var targets
+
+// the urls where keywords were found
+// an array of strings
+var crawlReport
+
+// name of the crawl configuration
+var crawlName
 
 // the web page the crawler will start at
 var startingPage
 
-// the keyword or phrase we are searching for
-var targetWord
+// the keyword or we are searching for as
+// text from the html input field
+var keywords
 
 // the maximum number of web pages to visit
-var maxPages = 25
+var maxPages = 0
 
 // the pages we have already been to
 var pagesVisited = {}
@@ -25,52 +43,94 @@ var numPagesVisited = 0
 // pages that have yet to be visited
 var pagesToVisit = []
 
-// the current page being searched
-var currentPage
-
-// create URL object
-var url = new URL(startingPage);
-var baseUrl = url.protocol + "//" + url.hostname;
-
-// retrieve the <h1> element from index.html to display the current page being searched
-const currentPageDisplay = document.querySelector('.currentPage')
-
-// retrieve the <input> element for the start url from index.html
+const crawlNameInput = document.querySelector('.crawlNameInput')
 const startUrlInput = document.querySelector('.startUrlInput')
+const crawlDepthInput = document.querySelector('.crawlDepthInput')
+const keywordInput = document.querySelector('.keywordInput')
+const notification = document.querySelector('#message')
+const status = document.querySelector('#status')
+const runButton = document.querySelector('#run')
+const clearButton = document.querySelector('#clear')
+const toggleSwitch = document.querySelector('.theme')
+const reportBtn = document.querySelector('#reportBtn')
 
-// retrieve the <input> element for the target word from index.html
-const targetInput = document.querySelector('.targetInput')
+toggleSwitch.addEventListener('click', function() {
+  if (toggleSwitch.checked == false) {
+      changeTheme('#4b4b4b', '#ecf0f1')
+  }
+  else {
+      changeTheme('#ffffff', '#4b4b4b')
+  }
+})
 
-// retrieve the search icon button from index.html
-const searchBtn = document.querySelector('#searchBtn')
+// starts the crawl when the play triangle is clicked
+runButton.addEventListener('click', function() {
+  reportBtn.style.opacity = 0
 
-// retrieve the <div> element from index.html
-// the search results will be added to this element
-const resultsList = document.querySelector('.container')
+  /* todo later: validate all inputs */
 
-// add click event listener to the search icon button
-searchBtn.addEventListener('click', function() {
-  clearList()
-  // get the starting url that the user typed in
+  maxPages = parseInt(crawlDepthInput.value)
+  crawlName = crawlNameInput.value
   startingPage = startUrlInput.value
-  // get the target word that the user typed in
-  targetWord = targetInput.value
-  // add the starting url to the pagesToVisit array
+  keywords = keywordInput.value
   pagesToVisit.push(startingPage)
-  // start crawling
   crawl()
 })
 
-// main crawling function
+clearButton.addEventListener('click', function() {
+  startUrlInput.value = ''
+  crawlDepthInput.value = ''
+  crawlNameInput.value = ''
+  keywordInput.value = ''
+})
+
 function crawl() {
   if (numPagesVisited >= maxPages) {
-      // display to the user that we have reached the specified number of pages to visit
-      currentPageDisplay.innerHTML = 'Reached max limit of pages to visit'
+      notification.innerHTML = 'at max limit'
+      status.innerHTML = 'finished'
+      status.className = ''
+
+      reportBtn.style.opacity = 1
+      crawlReport = reportString.split('-break-')
+      reportString = ''
+
+      // format the reportString to be written to the txt file
+      for (var i = 0; i < targets.length; i++) {
+          reportString += '\n' + 'Keyword: ' + targets[i] + '\n\n'
+          for (var j = 0; j < crawlReport.length; j++) {
+              if (crawlReport[j].indexOf(targets[i]) != -1) {
+                var s = crawlReport[j].indexOf('http')
+                var e = crawlReport[j].length
+                reportString += crawlReport[j].substring(s, e) + '\n'
+              }
+          }
+      }
+
+      // generate the report when the button is clicked
+      // and then opens the file
+      reportBtn.addEventListener('click', function() {
+        var fileName = crawlName + 'CrawlReport.txt'
+        fs.writeFile(fileName, reportString, function (err) {
+            if (err) {
+              notification.innerHTML = 'failed'
+            }
+            notification.innerHTML = 'success'
+            reportString = ''
+            opn(fileName).then(() => {})
+            reportBtn.style.opacity = 0
+        })
+      })
+
+      // reset all the variables for another crawl
       numPagesVisited = 0
+      targets = []
+      crawlReport = []
       pagesToVisit = []
       pagesVisited = {}
       return
   }
+  status.innerHTML = 'running...'
+  status.className = 'statusRunning'
 
   // remove the first page from the pagesToVisit array so that we are
   // only searching the most relevant pages first
@@ -91,29 +151,26 @@ function visitPage(url, callback) {
   numPagesVisited++
 
   if (url === undefined) {
-      currentPageDisplay.innerHTML = 'page is undefined'
+      notification.innerHTML = 'something went wrong'
       return
   }
 
   var startIndex = url.indexOf('.') + 1
   // the url with the http/https and www parts removed
   var modifiedUrl = url.substring(startIndex, url.length)
-  // display the current page being searched
-  currentPageDisplay.innerHTML = 'searching ' + modifiedUrl
 
   // make a node request to the host server for the html
   request(url, function (error, response, html) {
     // use cheerio to retrieve the html and prepare for parsing
     $ = cheerio.load(html)
 
-    // integer indicating how many times the target was found on this page
-    var timesFound = searchForTarget($, targetWord)
+    notification.innerHTML = 'crawling page #' + numPagesVisited
 
-    if (timesFound > 0) {
-      // dynamically create a new <div> and append to the list
-      var listNode = document.createElement('div')
-      listNode.innerHTML = "'" + targetWord + "'" + ' found ' + timesFound + ' times at ' + modifiedUrl + '<br><br>'
-      resultsList.append(listNode)
+    var pageReport = searchForTargets($)
+    for (var i = 0; i < pageReport[0].length; i++) {
+        if (pageReport[1][i] > 0) {
+            reportString += pageReport[0][i] + ' ' + url + '-break-'
+        }
     }
 
     // collect all internal links on current page
@@ -131,23 +188,38 @@ function visitPage(url, callback) {
   })
 }
 
-function searchForTarget($, target) {
+function searchForTargets($) {
   var bodyText = $('html > body').text().toLowerCase()
-  var words = bodyText.split(' ')
-  var count = 0
+  var htmlBody = bodyText.split(' ')
+  targets = keywords.split(',')
+  var results = []
 
-  words.map(function(index) {
-    var lcIndex = index.toLowerCase()
-    var lcTarget = target.toLowerCase()
-    if (lcIndex.indexOf(lcTarget) != -1) {
-      count++
-    }
-  })
-  return count
+  for (var i = 0; i < targets.length; i++) {
+      targets[i] = targets[i].trim()
+      results.push(0)
+  }
+
+  for (var i = 0; i < targets.length; i++) {
+      htmlBody.map(function(index) {
+        var lcIndex = index.toLowerCase()
+        var lcTarget = targets[i].toLowerCase()
+        if (lcIndex.indexOf(lcTarget) != -1) {
+            results[i]++
+        }
+      })
+  }
+  return [targets, results]
 }
 
-function clearList() {
-  while (resultsList.hasChildNodes()) {
-      resultsList.removeChild(resultsList.lastChild)
-  }
+function changeTheme(background, foreground) {
+  document.querySelector('body').style.backgroundColor = background
+
+  document.querySelector('span').style.color = foreground
+  document.querySelector('h1').style.color = foreground
+  document.querySelector('h3').style.color = foreground
+
+  document.querySelector('#run').style.color = foreground
+  document.querySelector('#history').style.color = foreground
+  document.querySelector('#file').style.color = foreground
+  document.querySelector('#clear').style.color = foreground
 }

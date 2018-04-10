@@ -67,7 +67,7 @@ const toggleSwitch = document.querySelector('.theme')
 const reportBtn = document.querySelector('#reportBtn')
 
 //Path to the searches database
-const dbPath = path.resolve(__dirname, 'Searches.db')
+const dbPath = path.resolve(__dirname, 'Searches.db');
 
 toggleSwitch.addEventListener('click', function() {
   if (toggleSwitch.checked == false) {
@@ -100,10 +100,10 @@ clearButton.addEventListener('click', function() {
 })
 
 saveButton.addEventListener('click', function() {
-	savedName = crawlNameInput.value
-	savedStartingPages = startUrlInput.value
-	savedKeywords = keywordInput.value
-	savedDepth = crawlDepthInput.value
+	savedName = crawlNameInput.value;
+	savedStartingPages = startUrlInput.value;
+	savedKeywords = keywordInput.value;
+	savedDepth = crawlDepthInput.value;
 	
 	console.log(savedName + savedStartingPages + savedKeywords + savedDepth);
 	
@@ -133,6 +133,7 @@ saveButton.addEventListener('click', function() {
 });
 
 loadButton.addEventListener('click', function() {
+	window.location.href=path.resolve(__dirname, 'searchSelection.html')
 });
 
 function crawl() {

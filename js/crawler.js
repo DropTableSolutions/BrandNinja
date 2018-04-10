@@ -105,6 +105,8 @@ saveButton.addEventListener('click', function() {
 	savedKeywords = keywordInput.value
 	savedDepth = crawlDepthInput.value
 	
+	console.log(savedName + savedStartingPages + savedKeywords + savedDepth);
+	
 	let db = new sqlite3.Database('dbPath', sqlite3.OPEN_READWRITE, (err) => {
 		if (err) {
 			console.error(err.message);
@@ -120,8 +122,8 @@ saveButton.addEventListener('click', function() {
 		stmt.run(savedName, savedStartingPages, savedKeywords, savedDepth);
 		stmt.finalize();
 		
-		db.each("SELECT name, depth FROM saved_searches", function(err, row) {
-			console.log(row.name + ", " + row.depth);
+		db.each("SELECT * FROM saved_searches", function(err, row) {
+			console.log(row.name + ", " + row.links + ", " + row.keywords + ", " + row.depth);
 		});
 	});
 	
@@ -131,9 +133,6 @@ saveButton.addEventListener('click', function() {
 });
 
 loadButton.addEventListener('click', function() {
-	var searchName = prompt("Please enter the search name", "Search");
-	
-	console.log(searchName);
 });
 
 function crawl() {

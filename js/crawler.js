@@ -70,6 +70,18 @@ runButton.addEventListener('click', function() {
   /* todo later: validate all inputs */
 
   maxPages = parseInt(crawlDepthInput.value)
+  //validate crawl depth
+  if(maxPages == ""){
+      window.alert("Please enter a depth value");
+      crawlDepthInput.focus();
+      return false;
+  }
+    if(isNaN(maxPages) || maxPages < 1 ) {
+        window.alert("Invalid input");
+        crawlDepthInput.focus();
+        return false;
+    }
+
   crawlName = crawlNameInput.value
   startingPage = startUrlInput.value
   keywords = keywordInput.value

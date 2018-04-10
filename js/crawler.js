@@ -9,7 +9,7 @@ const fs = require('fs')
 // module for opening files in node
 const opn = require('opn')
 //module for validating URLs
-const validUrl = require('valid-url')
+const validUrl = require('check-valid-url')
 
 // the crawl report string to be written
 // to the txt file
@@ -73,21 +73,22 @@ runButton.addEventListener('click', function() {
 
   maxPages = parseInt(crawlDepthInput.value)
   //validate crawl depth
-  if(maxPages == ""){
-      notification.innerHTML= 'Please enter a depth value'
+  if(maxPages == "") {
+      notification.innerHTML = 'Please enter valid depth value'
       crawlDepthInput.focus();
-      //return false;
+    //  return false;
   }
-    if(isNaN(maxPages) || maxPages < 1 ) {
-        notification.innerHTML= 'Invalid Input'
-        crawlDepthInput.focus();
-        return false;
-    }
+  if ((isNan(maxPages)) || (maxPages < 1)){
+      notification.innerHTML = 'Please enter valid depth value'
+      crawlDepthInput.focus();
+      return false;
+  }
+  
 
   crawlName = crawlNameInput.value
   //validate crawl name
   if(crawlName == "") {
-      window.alert("Please enter a crawl name");
+      notification.innerHTML = 'Please enter a crawl name'
       crawlNameInput.focus();
       return false;
   }
@@ -95,14 +96,15 @@ runButton.addEventListener('click', function() {
   startingPage = startUrlInput.value
   //validate starting URL
   if(startingPage == "") {
-      notification.innerHTML = 'Invalid URL'
-      startUrlInput.focus();
+    notification.innerHTML = 'Please enter URL'
+    startUrlInput.focus();
+    return false;
   }
   
   keywords = keywordInput.value
   //validate keyword(s)
   if(keywords == "") {
-      window.alert("Please enter keyword(s)");
+      notification.innerHTML = 'Please enter keyword(s)'
       keywordInput.focus();
       return false;
   }
@@ -116,6 +118,7 @@ clearButton.addEventListener('click', function() {
   crawlDepthInput.value = ''
   crawlNameInput.value = ''
   keywordInput.value = ''
+  notification.innerHTML = ''
 })
 
 function crawl() {

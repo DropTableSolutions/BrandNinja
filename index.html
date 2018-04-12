@@ -5,23 +5,23 @@
     <link rel="stylesheet" href="./css/style.css" />
     <meta charset="UTF-8">
   </head>
-  <body>
+  <body onload="setValues()">
 
     <div class="configuration">
 
-      <div class="option">
+      <div class="option" >
         <i id="run" class="fa fa-play" style="font-size:18px"></i>
         <p>Run Configuration</p>
       </div>
 
       <div class="option">
         <i id="history" class="fa fa-book" style="font-size:18px"></i>
-        <p>Crawl History</p>
+        <p>Save Search</p>
       </div>
 
       <div class="option">
         <i id="file" class="fa fa-file-text" style="font-size:18px"></i>
-        <p>Import File</p>
+        <p>Load Search</p>
       </div>
 
       <div class="option">
@@ -44,13 +44,12 @@
       <button id="reportBtn">Generate Report</button>
     </div>
 
-
     <div class="crawlInfo">
       <h1>General Crawl Information</h1>
-      <input class="crawlNameInput" type="text" placeholder="   Crawl Name">
-      <input class="startUrlInput" type="text" placeholder="   Start Url">
-      <input class="keywordInput" type="text" placeholder="   Keywords i.e radford, xbox, ..">
-      <input class="crawlDepthInput" type="text" placeholder="   Maximum Crawl Depth">
+      <input class="crawlNameInput" id="name" type="text" placeholder="   Crawl Name">
+      <input class="startUrlInput" id="URL" type="text" placeholder="   Start Url">
+      <input class="keywordInput" id="keys" type="text" placeholder="   Keywords i.e radford, xbox, ..">
+      <input class="crawlDepthInput" id="depth" type="text" placeholder="   Maximum Crawl Depth">
     </div>
 
     <h3>change theme</h3>
@@ -60,8 +59,15 @@
     </label>
 
     <script>
-      //equire('./js/NewCrawler.js')
       require('./js/crawler.js')
+	  
+	  function setValues() {
+		var hashParams = window.location.hash.substr(1).split('&');
+		for(var i = 0; i < hashParams.length; i++){
+			var p = hashParams[i].split('=');
+			document.getElementById(p[0]).value = decodeURIComponent(p[1]);;
+		}
+	  }
     </script>
   </body>
 </html>

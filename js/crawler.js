@@ -8,7 +8,10 @@ const URL = require('url-parse');
 const fs = require('fs');
 // module for opening files in node
 const opn = require('opn');
-
+// module for database connection
+const sqlite3 = require('sqlite3');
+//module to allow direct paths to fileSize
+const path = require('path');
 console.log("running");
 clearFile();
 //temp;
@@ -16,17 +19,20 @@ clearFile();
 var maxDepth;
 var startingSite;
 var keywords;
+
 /*
 recursive function for crawling
  */
-function crawl(startingSite, depth)
-{
-    if(depth < maxDepth) {
+
+
+function crawl(startingSite, depth) {
+    if (depth < maxDepth) {
         getLinks(startingSite, function (inSites) { //pulls all the links from a specific page and returns them as an array of strings
             for (var i = 0; i < inSites.length; i++) { //for each string we got from the page
                 //console.log(inSites[i] + " , " + depth); //print out the string, and the depth it was found at
                 findTarget(inSites[i], depth); //find any of the keywords we want on the page, print out if so
                 crawl(inSites[i], depth + 1); //crawl all the pages on that page, and increase the depth
+                status.innerHTML = "Running";
             }
         });
     }
@@ -35,26 +41,25 @@ function crawl(startingSite, depth)
 /*
 runs through a list of sites and tries to find any of the keywords
  */
-function findTarget(site, depth)
-{
-    findInPage(keywords, site, function(containsATarget, target, url){
-        if(containsATarget)
-        {
+function findTarget(site, depth) {
+    findInPage(keywords, site, function (containsATarget, target, url) {
+        if (containsATarget) {
             //TODO: PRINT TO FILE
-            writeToFile("Matched a keyword: " +  target + " at: " + url +" with a depth of: " + (depth+1));
-            console.log("Matched a keyword: " +  target + " at: " + url +" with a depth of: " + (depth+1));
+            writeToFile("Matched a keyword: " + target + " at: " + url + " with a depth of: " + (depth + 1));
+            console.log("Matched a keyword: " + target + " at: " + url + " with a depth of: " + (depth + 1));
         }
     });
 }
 
-function clearFile()
-{
-    fs.truncate('testfile.txt', 0, function(){console.log('done')});
+function clearFile() {
+    fs.truncate('testfile.txt', 0, function () {
+        console.log('done')
+    });
 }
-function writeToFile(line)
-{
-    fs.appendFile("testfile.txt", line + "\r\n", function(err) {
-        if(err) {
+
+function writeToFile(line) {
+    fs.appendFile("testfile.txt", line + "\r\n", function (err) {
+        if (err) {
             return console.log(err);
         }
     });
@@ -63,17 +68,14 @@ function writeToFile(line)
 /*
 returns a list of urls found on a parent url page
  */
-function getLinks(parentURL, callback)
-{
+function getLinks(parentURL, callback) {
     var url = parentURL;
     var sites = [];
-    if(url != undefined)
-    {
+    if (url != undefined) {
         request(url, function (error, response, body) {
-            if(!error)
-            {
-                var $  = cheerio.load(body);
-                $('a').each(function(i, elem){
+            if (!error) {
+                var $ = cheerio.load(body);
+                $('a').each(function (i, elem) {
                     sites.push(elem.attribs.href);
                 });
             }
@@ -88,27 +90,20 @@ function getLinks(parentURL, callback)
 /*
 returns true if a page contains one of the target keywords, as well as the URL it was found at, and the target itself;
  */
-function findInPage(target, url, callback)
-{
-    if(url != undefined)
-    {
+function findInPage(target, url, callback) {
+    if (url != undefined) {
         request(url, function (error, response, body) {
-            if(!error)
-            {
-                var $  = cheerio.load(body);
+            if (!error) {
+                var $ = cheerio.load(body);
                 var bodyText = $('html > body').text().toLowerCase();
                 var htmlBody = bodyText.split(' ');
                 var targets = target.split(',');
-                for( var i = 0; i < targets.length; i++)
-                {
+                for (var i = 0; i < targets.length; i++) {
                     targets[i].trim();
-                    for(var j = 0; j < htmlBody.length; j++)
-                    {
-                        if(htmlBody[i] !== undefined)
-                        {
+                    for (var j = 0; j < htmlBody.length; j++) {
+                        if (htmlBody[i] !== undefined) {
                             htmlBody[i].trim();
-                            if(targets[i].localeCompare(htmlBody[j]) === 0)
-                            {
+                            if (targets[i].localeCompare(htmlBody[j]) === 0) {
                                 console.log("MATCH: " + targets[i] + " == " + htmlBody[j] + " at: " + url);
                                 return callback(true, targets[i], url);
                             }
@@ -118,8 +113,7 @@ function findInPage(target, url, callback)
             }
         });
     }
-    else
-    {
+    else {
         return callback(false, null, url);
     }
 }
@@ -135,7 +129,7 @@ const clearButton = document.querySelector('#clear');
 const toggleSwitch = document.querySelector('.theme');
 const reportBtn = document.querySelector('#reportBtn');
 
-runButton.addEventListener('click', function() {
+runButton.addEventListener('click', function () {
     maxDepth = parseInt(crawlDepthInput.value);
     crawlName = crawlNameInput.value;
     startingSite = startUrlInput.value;
@@ -143,20 +137,20 @@ runButton.addEventListener('click', function() {
     reportBtn.style.opacity = 0;
     run();
 });
-async function run()
-{
+
+async function run() {
     await crawl(startingSite, 0);
     console.log("Finished");
 }
 
-clearButton.addEventListener('click', function() {
+clearButton.addEventListener('click', function () {
     startingSite.value = '';
     maxDepth.value = '';
     crawlNameInput.value = '';
     keywordInput.value = '';
 });
 
-toggleSwitch.addEventListener('click', function() {
+toggleSwitch.addEventListener('click', function () {
     if (toggleSwitch.checked == false) {
         changeTheme('#4b4b4b', '#ecf0f1');
     }
@@ -177,6 +171,52 @@ function changeTheme(background, foreground) {
     document.querySelector('#run').style.color = foreground;
     document.querySelector('#history').style.color = foreground;
     document.querySelector('#file').style.color = foreground;
-    document.querySelector('#clear').style.color = foreground
+    document.querySelector('#clear').style.color = foreground;
 }
+
+var savedName;
+var savedStartingPages;
+var savedKeywords;
+var savedDepth;
+
+const dbPath = path.resolve(__dirname, 'Searches.db');
+const saveButton = document.querySelector('#history');
+const loadButton = document.querySelector('#file');
+saveButton.addEventListener('click', function () {
+    savedName = crawlNameInput.value;
+    savedStartingPages = startUrlInput.value;
+    savedKeywords = keywordInput.value;
+    savedDepth = crawlDepthInput.value;
+
+    console.log(savedName + savedStartingPages + savedKeywords + savedDepth);
+
+    let db = new sqlite3.Database('dbPath', sqlite3.OPEN_READWRITE, (err) => {
+        if (err) {
+            console.error(err.message);
+        }
+        console.log('Connected to the Searches database.');
+    });
+
+    db.serialize(function () {
+
+        db.run("CREATE TABLE if not exists saved_searches(name TEXT, links LONGTEXT, keywords LONGTEXT, depth INT)");
+
+        var stmt = db.prepare("INSERT INTO saved_searches VALUES (?,?,?,?)");
+        stmt.run(savedName, savedStartingPages, savedKeywords, savedDepth);
+        stmt.finalize();
+
+        db.each("SELECT * FROM saved_searches", function (err, row) {
+            console.log(row.name + ", " + row.links + ", " + row.keywords + ", " + row.depth);
+        });
+    });
+
+    db.close();
+
+    notification.innerHTML = 'Search saved.';
+});
+
+loadButton.addEventListener('click', function () {
+    window.location.href = path.resolve(__dirname, 'searchSelection.html')
+});
+
 

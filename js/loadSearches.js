@@ -8,7 +8,7 @@ const fs = require('fs');
 const searches = document.querySelector('#searches');
 
 //Path to the searches database
-const dbPath = path.resolve(__dirname, 'Searches.db');
+const dbPath = path.resolve('C:\\Users\Ansari\\Documents\\GitHub\\BrandNinja\\Searches.db');
 
 function loadSearches() {
 	let db = new sqlite3.Database('dbPath', sqlite3.OPEN_READWRITE, (err) => {

@@ -27,7 +27,7 @@ const runButton = document.querySelector('#run');
 const clearButton = document.querySelector('#clear');
 const toggleSwitch = document.querySelector('.theme');
 const reportBtn = document.querySelector('#reportBtn');
-const dbPath = path.resolve(__dirname, 'Searches.db');
+const dbPath = path.resolve('C:\\Users\\Ansari\\Documents\\GitHub\\BrandNinja\\Searches.db');
 const saveButton = document.querySelector('#history');
 const loadButton = document.querySelector('#file');
 
@@ -201,8 +201,10 @@ saveButton.addEventListener('click', function () {
     savedDepth = crawlDepthInput.value;
 
     console.log(savedName + savedStartingPages + savedKeywords + savedDepth);
+    var exists = fs.existsSync(dbPath);
+    console.log("exists: " + exists);
 
-    let db = new sqlite3.Database('dbPath', sqlite3.OPEN_READWRITE, (err) => {
+    let db = new sqlite3.Database('dbPath', (err) => {
         if (err) {
             console.error(err.message);
         }

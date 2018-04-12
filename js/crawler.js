@@ -2,28 +2,38 @@
 const request = require('request');
 // module for easily parsing html
 const cheerio = require('cheerio');
-// module for creating url objects in node
-const URL = require('url-parse');
 // module for accessing the file system
 const fs = require('fs');
-// module for opening files in node
-const opn = require('opn');
 // module for database connection
 const sqlite3 = require('sqlite3');
 //module to allow direct paths to fileSize
 const path = require('path');
-console.log("running");
 clearFile();
-//temp;
 
 var maxDepth;
 var startingSite;
 var keywords;
+var savedName;
+var savedStartingPages;
+var savedKeywords;
+var savedDepth;
+const crawlNameInput = document.querySelector('.crawlNameInput');
+const startUrlInput = document.querySelector('.startUrlInput');
+const crawlDepthInput = document.querySelector('.crawlDepthInput');
+const keywordInput = document.querySelector('.keywordInput');
+const notification = document.querySelector('#message');
+const status = document.querySelector('#status');
+const runButton = document.querySelector('#run');
+const clearButton = document.querySelector('#clear');
+const toggleSwitch = document.querySelector('.theme');
+const reportBtn = document.querySelector('#reportBtn');
+const dbPath = path.resolve(__dirname, 'Searches.db');
+const saveButton = document.querySelector('#history');
+const loadButton = document.querySelector('#file');
 
 /*
 recursive function for crawling
  */
-
 
 function crawl(startingSite, depth) {
     if (depth < maxDepth) {
@@ -51,12 +61,18 @@ function findTarget(site, depth) {
     });
 }
 
+/*
+clears the output file on launch of the program
+ */
 function clearFile() {
     fs.truncate('testfile.txt', 0, function () {
         console.log('done')
     });
 }
 
+/*
+writes a line to the output file
+ */
 function writeToFile(line) {
     fs.appendFile("testfile.txt", line + "\r\n", function (err) {
         if (err) {
@@ -118,20 +134,11 @@ function findInPage(target, url, callback) {
     }
 }
 
-const crawlNameInput = document.querySelector('.crawlNameInput');
-const startUrlInput = document.querySelector('.startUrlInput');
-const crawlDepthInput = document.querySelector('.crawlDepthInput');
-const keywordInput = document.querySelector('.keywordInput');
-const notification = document.querySelector('#message');
-const status = document.querySelector('#status');
-const runButton = document.querySelector('#run');
-const clearButton = document.querySelector('#clear');
-const toggleSwitch = document.querySelector('.theme');
-const reportBtn = document.querySelector('#reportBtn');
+
 
 runButton.addEventListener('click', function () {
     maxDepth = parseInt(crawlDepthInput.value);
-    crawlName = crawlNameInput.value;
+    crawlName = crawlNameInput.value; //TODO: do something with the name
     startingSite = startUrlInput.value;
     keywords = keywordInput.value;
     reportBtn.style.opacity = 0;
@@ -143,12 +150,17 @@ async function run() {
     console.log("Finished");
 }
 
+/*
+clears the input fields
+ */
 clearButton.addEventListener('click', function () {
     startingSite.value = '';
+    startUrlInput.value = '';
     maxDepth.value = '';
     crawlNameInput.value = '';
     keywordInput.value = '';
 });
+
 
 toggleSwitch.addEventListener('click', function () {
     if (toggleSwitch.checked == false) {
@@ -159,6 +171,10 @@ toggleSwitch.addEventListener('click', function () {
     }
 });
 
+/*
+changes the theme
+//TODO: remove this, it's not needed
+ */
 function changeTheme(background, foreground) {
     console.log('Changing theme');
 
@@ -174,14 +190,10 @@ function changeTheme(background, foreground) {
     document.querySelector('#clear').style.color = foreground;
 }
 
-var savedName;
-var savedStartingPages;
-var savedKeywords;
-var savedDepth;
-
-const dbPath = path.resolve(__dirname, 'Searches.db');
-const saveButton = document.querySelector('#history');
-const loadButton = document.querySelector('#file');
+/*
+Saves to database?
+//TODO: documentation, possibly split up into multiple functions
+ */
 saveButton.addEventListener('click', function () {
     savedName = crawlNameInput.value;
     savedStartingPages = startUrlInput.value;
@@ -215,6 +227,9 @@ saveButton.addEventListener('click', function () {
     notification.innerHTML = 'Search saved.';
 });
 
+/*
+TODO: flesh this out
+ */
 loadButton.addEventListener('click', function () {
     window.location.href = path.resolve(__dirname, 'searchSelection.html')
 });

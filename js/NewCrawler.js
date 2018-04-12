@@ -19,17 +19,17 @@ var keywords;
 /*
 recursive function for crawling
  */
-function crawl(startingSite, depth)
+ function crawl(startingSite, depth)
 {
-    if(depth < maxDepth) {
-        getLinks(startingSite, function (inSites) { //pulls all the links from a specific page and returns them as an array of strings
-            for (var i = 0; i < inSites.length; i++) { //for each string we got from the page
-                //console.log(inSites[i] + " , " + depth); //print out the string, and the depth it was found at
-                findTarget(inSites[i], depth); //find any of the keywords we want on the page, print out if so
-                crawl(inSites[i], depth + 1); //crawl all the pages on that page, and increase the depth
-            }
-        });
-    }
+        if(depth < maxDepth) {
+            getLinks(startingSite, function (inSites) { //pulls all the links from a specific page and returns them as an array of strings
+                for (var i = 0; i < inSites.length; i++) { //for each string we got from the page
+                    //console.log(inSites[i] + " , " + depth); //print out the string, and the depth it was found at
+                    findTarget(inSites[i], depth); //find any of the keywords we want on the page, print out if so
+                    crawl(inSites[i], depth + 1); //crawl all the pages on that page, and increase the depth
+                }
+            });
+        }
 }
 
 /*
@@ -37,7 +37,7 @@ runs through a list of sites and tries to find any of the keywords
  */
 function findTarget(site, depth)
 {
-    findInPage(keywords, site, function(containsATarget, target, url){
+        findInPage(keywords, site, function(containsATarget, target, url){
         if(containsATarget)
         {
             //TODO: PRINT TO FILE

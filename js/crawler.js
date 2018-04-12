@@ -1,153 +1,237 @@
-// import the necessary node modules
-
 // module for making http/https requests
-const request = require('request')
+const request = require('request');
 // module for easily parsing html
-const cheerio = require('cheerio')
-// module for creating url objects in node
-const URL = require('url-parse')
+const cheerio = require('cheerio');
+// module for accessing the file system
+const fs = require('fs');
+// module for database connection
+const sqlite3 = require('sqlite3');
+//module to allow direct paths to fileSize
+const path = require('path');
+clearFile();
 
-// the web page the crawler will start at
-var startingPage
+var maxDepth;
+var startingSite;
+var keywords;
+var savedName;
+var savedStartingPages;
+var savedKeywords;
+var savedDepth;
+const crawlNameInput = document.querySelector('.crawlNameInput');
+const startUrlInput = document.querySelector('.startUrlInput');
+const crawlDepthInput = document.querySelector('.crawlDepthInput');
+const keywordInput = document.querySelector('.keywordInput');
+const notification = document.querySelector('#message');
+const status = document.querySelector('#status');
+const runButton = document.querySelector('#run');
+const clearButton = document.querySelector('#clear');
+const toggleSwitch = document.querySelector('.theme');
+const reportBtn = document.querySelector('#reportBtn');
+const dbPath = path.resolve(__dirname, 'Searches.db');
+const saveButton = document.querySelector('#history');
+const loadButton = document.querySelector('#file');
 
-// the keyword or phrase we are searching for
-var targetWord
+/*
+recursive function for crawling
+ */
 
-// the maximum number of web pages to visit
-var maxPages = 25
-
-// the pages we have already been to
-var pagesVisited = {}
-
-// current number of pages visited
-var numPagesVisited = 0
-
-// pages that have yet to be visited
-var pagesToVisit = []
-
-// the current page being searched
-var currentPage
-
-// create URL object
-var url = new URL(startingPage);
-var baseUrl = url.protocol + "//" + url.hostname;
-
-// retrieve the <h1> element from index.html to display the current page being searched
-const currentPageDisplay = document.querySelector('.currentPage')
-
-// retrieve the <input> element for the start url from index.html
-const startUrlInput = document.querySelector('.startUrlInput')
-
-// retrieve the <input> element for the target word from index.html
-const targetInput = document.querySelector('.targetInput')
-
-// retrieve the search icon button from index.html
-const searchBtn = document.querySelector('#searchBtn')
-
-// retrieve the <div> element from index.html
-// the search results will be added to this element
-const resultsList = document.querySelector('.container')
-
-// add click event listener to the search icon button
-searchBtn.addEventListener('click', function() {
-  clearList()
-  // get the starting url that the user typed in
-  startingPage = startUrlInput.value
-  // get the target word that the user typed in
-  targetWord = targetInput.value
-  // add the starting url to the pagesToVisit array
-  pagesToVisit.push(startingPage)
-  // start crawling
-  crawl()
-})
-
-// main crawling function
-function crawl() {
-  if (numPagesVisited >= maxPages) {
-      // display to the user that we have reached the specified number of pages to visit
-      currentPageDisplay.innerHTML = 'Reached max limit of pages to visit'
-      numPagesVisited = 0
-      pagesToVisit = []
-      pagesVisited = {}
-      return
-  }
-
-  // remove the first page from the pagesToVisit array so that we are
-  // only searching the most relevant pages first
-  var nextPage = pagesToVisit.shift()
-
-  // if we've already visted that page, then recurse and try the next one
-  // else visit the page
-  if (nextPage in pagesVisited) {
-      crawl()
-  }
-  else {
-      visitPage(nextPage, crawl)
-  }
-}
-
-function visitPage(url, callback) {
-  pagesVisited[url] = true
-  numPagesVisited++
-
-  if (url === undefined) {
-      currentPageDisplay.innerHTML = 'page is undefined'
-      return
-  }
-
-  var startIndex = url.indexOf('.') + 1
-  // the url with the http/https and www parts removed
-  var modifiedUrl = url.substring(startIndex, url.length)
-  // display the current page being searched
-  currentPageDisplay.innerHTML = 'searching ' + modifiedUrl
-
-  // make a node request to the host server for the html
-  request(url, function (error, response, html) {
-    // use cheerio to retrieve the html and prepare for parsing
-    $ = cheerio.load(html)
-
-    // integer indicating how many times the target was found on this page
-    var timesFound = searchForTarget($, targetWord)
-
-    if (timesFound > 0) {
-      // dynamically create a new <div> and append to the list
-      var listNode = document.createElement('div')
-      listNode.innerHTML = "'" + targetWord + "'" + ' found ' + timesFound + ' times at ' + modifiedUrl + '<br><br>'
-      resultsList.append(listNode)
-    }
-
-    // collect all internal links on current page
-    links = $('a')
-    $(links).each(function(i, link) {
-        var page = $(link).attr('href')
-        if (page != undefined) {
-            // only add links that begin with http or https
-            if (page.substring(0, 4) === 'http') {
-                pagesToVisit.push(page)
+function crawl(startingSite, depth) {
+    if (depth < maxDepth) {
+        getLinks(startingSite, function (inSites) { //pulls all the links from a specific page and returns them as an array of strings
+            for (var i = 0; i < inSites.length; i++) { //for each string we got from the page
+                //console.log(inSites[i] + " , " + depth); //print out the string, and the depth it was found at
+                findTarget(inSites[i], depth); //find any of the keywords we want on the page, print out if so
+                crawl(inSites[i], depth + 1); //crawl all the pages on that page, and increase the depth
+                status.innerHTML = "Running";
             }
-        }
-    })
-    callback()
-  })
-}
-
-function searchForTarget($, target) {
-  var bodyText = $('html > body').text().toLowerCase()
-  var words = bodyText.split(' ')
-  var count = 0
-
-  words.map(function(index) {
-    var lcIndex = index.toLowerCase()
-    var lcTarget = target.toLowerCase()
-    if (lcIndex.indexOf(lcTarget) != -1) {
-      count++
+        });
     }
-  })
-  return count
 }
 
-function clearList() {
-  while (resultsList.hasChildNodes()) {
-      resultsList.removeChild(resultsList.lastChild)
-  }
+/*
+runs through a list of sites and tries to find any of the keywords
+ */
+function findTarget(site, depth) {
+    findInPage(keywords, site, function (containsATarget, target, url) {
+        if (containsATarget) {
+            //TODO: PRINT TO FILE
+            writeToFile("Matched a keyword: " + target + " at: " + url + " with a depth of: " + (depth + 1));
+            console.log("Matched a keyword: " + target + " at: " + url + " with a depth of: " + (depth + 1));
+        }
+    });
 }
+
+/*
+clears the output file on launch of the program
+ */
+function clearFile() {
+    fs.truncate('testfile.txt', 0, function () {
+        console.log('done')
+    });
+}
+
+/*
+writes a line to the output file
+ */
+function writeToFile(line) {
+    fs.appendFile("testfile.txt", line + "\r\n", function (err) {
+        if (err) {
+            return console.log(err);
+        }
+    });
+}
+
+/*
+returns a list of urls found on a parent url page
+ */
+function getLinks(parentURL, callback) {
+    var url = parentURL;
+    var sites = [];
+    if (url != undefined) {
+        request(url, function (error, response, body) {
+            if (!error) {
+                var $ = cheerio.load(body);
+                $('a').each(function (i, elem) {
+                    sites.push(elem.attribs.href);
+                });
+            }
+            callback(sites);
+        });
+    }
+    else {
+
+    }
+}
+
+/*
+returns true if a page contains one of the target keywords, as well as the URL it was found at, and the target itself;
+ */
+function findInPage(target, url, callback) {
+    if (url != undefined) {
+        request(url, function (error, response, body) {
+            if (!error) {
+                var $ = cheerio.load(body);
+                var bodyText = $('html > body').text().toLowerCase();
+                var htmlBody = bodyText.split(' ');
+                var targets = target.split(',');
+                for (var i = 0; i < targets.length; i++) {
+                    targets[i].trim();
+                    for (var j = 0; j < htmlBody.length; j++) {
+                        if (htmlBody[i] !== undefined) {
+                            htmlBody[i].trim();
+                            if (targets[i].localeCompare(htmlBody[j]) === 0) {
+                                console.log("MATCH: " + targets[i] + " == " + htmlBody[j] + " at: " + url);
+                                return callback(true, targets[i], url);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    else {
+        return callback(false, null, url);
+    }
+}
+
+
+
+runButton.addEventListener('click', function () {
+    maxDepth = parseInt(crawlDepthInput.value);
+    crawlName = crawlNameInput.value; //TODO: do something with the name
+    startingSite = startUrlInput.value;
+    keywords = keywordInput.value;
+    reportBtn.style.opacity = 0;
+    run();
+});
+
+async function run() {
+    await crawl(startingSite, 0);
+    console.log("Finished");
+}
+
+/*
+clears the input fields
+ */
+clearButton.addEventListener('click', function () {
+    startingSite.value = '';
+    startUrlInput.value = '';
+    maxDepth.value = '';
+    crawlNameInput.value = '';
+    keywordInput.value = '';
+});
+
+
+toggleSwitch.addEventListener('click', function () {
+    if (toggleSwitch.checked == false) {
+        changeTheme('#4b4b4b', '#ecf0f1');
+    }
+    else {
+        changeTheme('#ffffff', '#4b4b4b');
+    }
+});
+
+/*
+changes the theme
+//TODO: remove this, it's not needed
+ */
+function changeTheme(background, foreground) {
+    console.log('Changing theme');
+
+    document.querySelector('body').style.backgroundColor = background;
+
+    document.querySelector('span').style.color = foreground;
+    document.querySelector('h1').style.color = foreground;
+    document.querySelector('h3').style.color = foreground;
+
+    document.querySelector('#run').style.color = foreground;
+    document.querySelector('#history').style.color = foreground;
+    document.querySelector('#file').style.color = foreground;
+    document.querySelector('#clear').style.color = foreground;
+}
+
+/*
+Saves to database?
+//TODO: documentation, possibly split up into multiple functions
+ */
+saveButton.addEventListener('click', function () {
+    savedName = crawlNameInput.value;
+    savedStartingPages = startUrlInput.value;
+    savedKeywords = keywordInput.value;
+    savedDepth = crawlDepthInput.value;
+
+    console.log(savedName + savedStartingPages + savedKeywords + savedDepth);
+
+    let db = new sqlite3.Database('dbPath', sqlite3.OPEN_READWRITE, (err) => {
+        if (err) {
+            console.error(err.message);
+        }
+        console.log('Connected to the Searches database.');
+    });
+
+    db.serialize(function () {
+
+        db.run("CREATE TABLE if not exists saved_searches(name TEXT, links LONGTEXT, keywords LONGTEXT, depth INT)");
+
+        var stmt = db.prepare("INSERT INTO saved_searches VALUES (?,?,?,?)");
+        stmt.run(savedName, savedStartingPages, savedKeywords, savedDepth);
+        stmt.finalize();
+
+        db.each("SELECT * FROM saved_searches", function (err, row) {
+            console.log(row.name + ", " + row.links + ", " + row.keywords + ", " + row.depth);
+        });
+    });
+
+    db.close();
+
+    notification.innerHTML = 'Search saved.';
+});
+
+/*
+TODO: flesh this out
+ */
+loadButton.addEventListener('click', function () {
+    window.location.href = path.resolve(__dirname, 'searchSelection.html')
+});
+
+

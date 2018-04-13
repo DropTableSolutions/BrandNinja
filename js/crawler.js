@@ -154,11 +154,12 @@ async function run() {
 clears the input fields
  */
 clearButton.addEventListener('click', function () {
-    startingSite.value = '';
+    startingSite = '';
     startUrlInput.value = '';
-    maxDepth.value = '';
+    maxDepth = '';
     crawlNameInput.value = '';
     keywordInput.value = '';
+    crawlDepthInput.value = '';
 });
 
 

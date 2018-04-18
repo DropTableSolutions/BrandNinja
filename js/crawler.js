@@ -8,7 +8,6 @@ const fs = require('fs');
 const sqlite3 = require('sqlite3');
 //module to allow direct paths to fileSize
 const path = require('path');
-clearFile();
 
 var maxDepth;
 var startingSite;
@@ -35,16 +34,20 @@ const loadButton = document.querySelector('#file');
 recursive function for crawling
  */
 
-function crawl(startingSite, depth) {
+let visited = new Set();
+
+function crawl(startingSite, depth, callback) {
     if (depth < maxDepth) {
-        getLinks(startingSite, function (inSites) { //pulls all the links from a specific page and returns them as an array of strings
-            for (var i = 0; i < inSites.length; i++) { //for each string we got from the page
-                //console.log(inSites[i] + " , " + depth); //print out the string, and the depth it was found at
-                findTarget(inSites[i], depth); //find any of the keywords we want on the page, print out if so
-                crawl(inSites[i], depth + 1); //crawl all the pages on that page, and increase the depth
-                status.innerHTML = "Running";
+        getLinks(startingSite, function (sites) { //pulls all the links from a specific page and returns them as an array of strings
+            for (var i = 0; i < sites.length; i++) { //for each string we got from the page
+                findTarget(sites[i], depth); //find any of the keywords we want on the page, print out if so
+                crawl(sites[i], depth + 1); //crawl all the pages on that page, and increase the depth
             }
         });
+    }
+    else
+    {
+        callback();
     }
 }
 
@@ -85,17 +88,21 @@ function writeToFile(line) {
 returns a list of urls found on a parent url page
  */
 function getLinks(parentURL, callback) {
-    var url = parentURL;
-    var sites = [];
+    let url = parentURL;
+    let set = new Set();
     if (url != undefined) {
         request(url, function (error, response, body) {
             if (!error) {
                 var $ = cheerio.load(body);
                 $('a').each(function (i, elem) {
-                    sites.push(elem.attribs.href);
+                    if (!visited.has(elem.attribs.href)) {
+                        console.log("added");
+                        set.add(elem.attribs.href);
+                        visited.add(elem.attribs.href);
+                    }
                 });
             }
-            callback(sites);
+            callback(Array.from(set));
         });
     }
     else {
@@ -135,8 +142,8 @@ function findInPage(target, url, callback) {
 }
 
 
-
 runButton.addEventListener('click', function () {
+    visited.clear();
     maxDepth = parseInt(crawlDepthInput.value);
     crawlName = crawlNameInput.value; //TODO: do something with the name
     startingSite = startUrlInput.value;
@@ -145,9 +152,10 @@ runButton.addEventListener('click', function () {
     run();
 });
 
-async function run() {
-    await crawl(startingSite, 0);
-    console.log("Finished");
+function run() {
+    crawl(startingSite, 0, new function () {
+        console.log("Finished");
+    });
 }
 
 /*
@@ -178,13 +186,10 @@ changes the theme
  */
 function changeTheme(background, foreground) {
     console.log('Changing theme');
-
     document.querySelector('body').style.backgroundColor = background;
-
     document.querySelector('span').style.color = foreground;
     document.querySelector('h1').style.color = foreground;
     document.querySelector('h3').style.color = foreground;
-
     document.querySelector('#run').style.color = foreground;
     document.querySelector('#history').style.color = foreground;
     document.querySelector('#file').style.color = foreground;

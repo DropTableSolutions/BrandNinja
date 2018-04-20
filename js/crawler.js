@@ -63,27 +63,6 @@ function findTarget(site, depth) {
         }
     });
 }
-
-/*
-clears the output file on launch of the program
- */
-function clearFile() {
-    fs.truncate('testfile.txt', 0, function () {
-        console.log('done')
-    });
-}
-
-/*
-writes a line to the output file
- */
-function writeToFile(line) {
-    fs.appendFile("testfile.txt", line + "\r\n", function (err) {
-        if (err) {
-            return console.log(err);
-        }
-    });
-}
-
 /*
 returns a list of urls found on a parent url page
  */

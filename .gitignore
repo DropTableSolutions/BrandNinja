@@ -1,0 +1,9 @@
+#directories
+bower_components
+dist
+.DS_STORE
+.MAC
+#files
+*.tgz
+*.log
+.idea/*

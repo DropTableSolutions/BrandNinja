@@ -4,12 +4,14 @@ const request = require('request');
 const cheerio = require('cheerio');
 // module for accessing the file system
 const fs = require('fs');
-//module for database connection
+// module for database connection
 const sqlite3 = require('sqlite3');
 //module to allow direct paths to fileSize
 const path = require('path');
 const electron = require('electron');
 const BrowserWindow = electron.remote.BrowserWindow;
+
+
 
 var maxDepth;
 var startingSite;
@@ -18,7 +20,6 @@ var savedName;
 var savedStartingPages;
 var savedKeywords;
 var savedDepth;
-
 const crawlNameInput = document.querySelector('.crawlNameInput');
 const startUrlInput = document.querySelector('.startUrlInput');
 const crawlDepthInput = document.querySelector('.crawlDepthInput');
@@ -27,6 +28,7 @@ const notification = document.querySelector('#message');
 const status = document.querySelector('#status');
 const runButton = document.querySelector('#run');
 const clearButton = document.querySelector('#clear');
+const toggleSwitch = document.querySelector('.theme');
 const reportBtn = document.querySelector('#reportBtn');
 const dbPath = path.resolve('C:\\Users\\Ansari\\Documents\\GitHub\\BrandNinja\\Searches.db');
 const saveButton = document.querySelector('#history');
@@ -61,27 +63,6 @@ function findTarget(site, depth) {
         }
     });
 }
-
-/*
-clears the output file on launch of the program
- */
-function clearFile() {
-    fs.truncate('testfile.txt', 0, function () {
-        console.log('done')
-    });
-}
-
-/*
-writes a line to the output file
- */
-function writeToFile(line) {
-    fs.appendFile("testfile.txt", line + "\r\n", function (err) {
-        if (err) {
-            return console.log(err);
-        }
-    });
-}
-
 /*
 returns a list of urls found on a parent url page
  */
@@ -94,7 +75,7 @@ function getLinks(parentURL, callback) {
                 var $ = cheerio.load(body);
                 $('a').each(function (i, elem) {
                     if (!visited.has(elem.attribs.href)) {
-                        // console.log("added");
+                        console.log("added");
                         set.add(elem.attribs.href);
                         visited.add(elem.attribs.href);
                     }
@@ -123,10 +104,10 @@ function findInPage(target, url, callback) {
                 var targets = target.split(',');
                 for (var i = 0; i < targets.length; i++) {
                     targets[i].trim();
-                    // console.log("SEARCHING: " + targets[i]);
+                    console.log("SEARCHING: " + targets[i]);
                     if(htmlBody.includes(target[i]))
                     {
-                        // console.log("MATCH: " + targets[i]  + " at: " + url);
+                        console.log("MATCH: " + targets[i]  + " at: " + url);
                         return callback(true, targets[i], url);
                     }
                 }
@@ -165,9 +146,9 @@ function resultsWindow()
 
 function addToWindow(url, matchedWord)
 {
-    win.webContents.send('url', url + '');
-    win.webContents.send('matchedWord', matchedWord + '');
-    sendData();
+        win.webContents.send('url', url + '');
+        win.webContents.send('matchedWord', matchedWord + '');
+        sendData();
 }
 
 function sendData() {
@@ -188,11 +169,35 @@ clearButton.addEventListener('click', function () {
 });
 
 
+toggleSwitch.addEventListener('click', function () {
+    if (toggleSwitch.checked == false) {
+        changeTheme('#4b4b4b', '#ecf0f1');
+    }
+    else {
+        changeTheme('#ffffff', '#4b4b4b');
+    }
+});
+
+/*
+changes the theme
+//TODO: remove this, it's not needed
+ */
+function changeTheme(background, foreground) {
+    console.log('Changing theme');
+    document.querySelector('body').style.backgroundColor = background;
+    document.querySelector('span').style.color = foreground;
+    document.querySelector('h1').style.color = foreground;
+    document.querySelector('h3').style.color = foreground;
+    document.querySelector('#run').style.color = foreground;
+    document.querySelector('#history').style.color = foreground;
+    document.querySelector('#file').style.color = foreground;
+    document.querySelector('#clear').style.color = foreground;
+}
+
 /*
 Saves to database?
 //TODO: documentation, possibly split up into multiple functions
  */
-
 saveButton.addEventListener('click', function () {
     savedName = crawlNameInput.value;
     savedStartingPages = startUrlInput.value;
@@ -230,8 +235,7 @@ saveButton.addEventListener('click', function () {
 
 /*
 TODO: flesh this out
-*/
-
+ */
 loadButton.addEventListener('click', function () {
     window.location.href = path.resolve(__dirname, 'searchSelection.html')
 });

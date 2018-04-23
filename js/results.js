@@ -27,7 +27,7 @@ ipc.on('url', (event, message) => {
 
 ipc.on('matchedWord', (event, message) => {
     console.log(message);
-    
+
     if (haveAdded(message)) {
       var section = document.querySelector('#' + message.trim());
       resultContainer.append(urlContainer);

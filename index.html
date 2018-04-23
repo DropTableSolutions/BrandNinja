@@ -52,17 +52,22 @@
       <input class="crawlDepthInput" id="depth" type="text" placeholder="   Maximum Crawl Depth">
     </div>
 
+    <h3>change theme</h3>
+    <label class="toggle">
+      <input class="theme" type="checkbox" checked>
+      <span class="slider round"></span>
+    </label>
+
     <script>
       require('./js/crawler.js');
-
-      function setValues() {
-         var hashParams = window.location.hash.substr(1).split('&');
-         for(var i = 0; i < hashParams.length; i++){
-           var p = hashParams[i].split('=');
-           document.getElementById(p[0]).value = decodeURIComponent(p[1]);;
-         }
-      }
-
+	  
+	  function setValues() {
+		var hashParams = window.location.hash.substr(1).split('&');
+		for(var i = 0; i < hashParams.length; i++){
+			var p = hashParams[i].split('=');
+			document.getElementById(p[0]).value = decodeURIComponent(p[1]);;
+		}
+	  }
     </script>
   </body>
 </html>

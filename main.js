@@ -13,13 +13,9 @@ const BrowserWindow = electron.BrowserWindow
 let mainWindow
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    resizable: false,
-    fullscreen: false
-  })
+  mainWindow = new BrowserWindow({width: 800, height: 600})
   mainWindow.setTitle('Brand Ninja')
+  mainWindow.setResizable(false)
 
   mainWindow.loadURL(url.format({
     pathname: path.join(__dirname, 'index.html'),

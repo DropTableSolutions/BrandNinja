@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "electron-rebuild": "^1.7.3",
+    "node-gyp": "^3.6.2",
     "opn": "^5.3.0"
   },
   "bugs": {

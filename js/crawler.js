@@ -137,12 +137,14 @@ function findInPage(target, url, callback) {
 
 
 runButton.addEventListener('click', function () {
-    maxDepth = parseInt(crawlDepthInput.value);
-    crawlName = crawlNameInput.value; //TODO: do something with the name
-    startingSite = startUrlInput.value;
-    keywords = keywordInput.value;
-    reportBtn.style.opacity = 0;
-    run();
+	if(validateInputs) {
+		maxDepth = parseInt(crawlDepthInput.value);
+		crawlName = crawlNameInput.value; //TODO: do something with the name
+		startingSite = startUrlInput.value;
+		keywords = keywordInput.value;
+		reportBtn.style.opacity = 0;
+		run();
+	}
 });
 
 async function run() {
@@ -192,49 +194,89 @@ function changeTheme(background, foreground) {
 }
 
 /*
-Saves to database?
-//TODO: documentation, possibly split up into multiple functions
+Saves searches to the database
  */
 saveButton.addEventListener('click', function () {
-    savedName = crawlNameInput.value;
-    savedStartingPages = startUrlInput.value;
-    savedKeywords = keywordInput.value;
-    savedDepth = crawlDepthInput.value;
+	
+	if(validateInputs()) {
+		//Gets values from the input fields
+		savedName = crawlNameInput.value;
+		savedStartingPages = startUrlInput.value;
+		savedKeywords = keywordInput.value;
+		savedDepth = crawlDepthInput.value;
 
-    console.log(savedName + savedStartingPages + savedKeywords + savedDepth);
-    var exists = fs.existsSync(dbPath);
-    console.log("exists: " + exists);
+		console.log(savedName + savedStartingPages + savedKeywords + savedDepth);
+		var exists = fs.existsSync(dbPath);
+		console.log("exists: " + exists);
 
-    let db = new sqlite3.Database('dbPath', (err) => {
-        if (err) {
-            console.error(err.message);
-        }
-        console.log('Connected to the Searches database.');
-    });
+		let db = new sqlite3.Database('dbPath', (err) => {
+			if (err) {
+				console.error(err.message);
+			}
+			console.log('Connected to the Searches database.');
+		});
 
-    db.serialize(function () {
+		db.serialize(function () {
 
-        db.run("CREATE TABLE if not exists saved_searches(name TEXT, links LONGTEXT, keywords LONGTEXT, depth INT)");
+			db.run("CREATE TABLE if not exists saved_searches(name TEXT, links LONGTEXT, keywords LONGTEXT, depth INT)");
 
-        var stmt = db.prepare("INSERT INTO saved_searches VALUES (?,?,?,?)");
-        stmt.run(savedName, savedStartingPages, savedKeywords, savedDepth);
-        stmt.finalize();
+			var stmt = db.prepare("INSERT INTO saved_searches VALUES (?,?,?,?)");
+			stmt.run(savedName, savedStartingPages, savedKeywords, savedDepth);
+			stmt.finalize();
 
-        db.each("SELECT * FROM saved_searches", function (err, row) {
-            console.log(row.name + ", " + row.links + ", " + row.keywords + ", " + row.depth);
-        });
-    });
+			db.each("SELECT * FROM saved_searches", function (err, row) {
+				console.log(row.name + ", " + row.links + ", " + row.keywords + ", " + row.depth);
+			});
+		});
 
-    db.close();
+		db.close();
 
-    notification.innerHTML = 'Search saved.';
+		notification.innerHTML = 'Search saved.';
+	}
 });
 
 /*
-TODO: flesh this out
+Opens a new menu to load searches
  */
 loadButton.addEventListener('click', function () {
     window.location.href = path.resolve(__dirname, 'searchSelection.html')
 });
+
+function validateInputs() {
+	var inputsValid = true;
+	
+	var nameRegEx = new RegExp('[0-9a-zA-Z]');
+	//Found on https://stackoverflow.com/questions/3809401/what-is-a-good-regular-expression-to-match-a-url
+	var siteRegEx = new RegExp('(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9]\.[^\s]{2,})');
+	var keyRegEx = new RegExp('[0-9a-zA-Z]+(,[0-9a-zA-Z]+)*');
+	var depthRegEx = new RegExp('^[0-9]+$');
+	
+	var nameInput = crawlNameInput.value;
+    var startInput = startUrlInput.value;
+    var keyInput = keywordInput.value;
+    var depthInput = crawlDepthInput.value;
+	
+	if(!nameRegEx.exec(nameInput)) {
+		inputsValid = false;
+		notification.innerHTML = 'Invalid name';
+	}
+	
+	if(!siteRegEx.exec(startInput)) {
+		inputsValid = false;
+		notification.innerHTML += '\n Invalid url';
+	}
+	
+	if(!keyRegEx.exec(keyInput)) {
+		inputsValid = false;
+		notification.innerHTML += '\n Invalid keys';
+	}
+	
+	if(!depthRegEx.exec(depthInput)) {
+		inputsValid = false;
+		notification.innerHTML += '\n Invalid depth';
+	}
+	
+	return inputsValid;
+}
 
 

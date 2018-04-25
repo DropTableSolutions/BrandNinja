@@ -19,6 +19,7 @@ var savedName;
 var savedStartingPages;
 var savedKeywords;
 var savedDepth;
+var running;
 const crawlNameInput = document.querySelector('.crawlNameInput');
 const startUrlInput = document.querySelector('.startUrlInput');
 const crawlDepthInput = document.querySelector('.crawlDepthInput');
@@ -39,7 +40,8 @@ recursive function for crawling
 let visited = new Set();
 
 function crawl(startingSite, depth) {
-    if (depth < maxDepth) {
+    if (depth < maxDepth && running) {
+        console.log(running);
         getLinks(startingSite, function (sites) { //pulls all the links from a specific page and returns them as an array of strings
             for (var i = 0; i < sites.length; i++) { //for each string we got from the page
                 findTarget(sites[i]); //find any of the keywords we want on the page, print out if so
@@ -137,6 +139,7 @@ runButton.addEventListener('click', function () {
 });
 
 function run() {
+    running = true;
     crawl(startingSite, 0);
     resultsWindow();
 }
@@ -147,7 +150,7 @@ function resultsWindow() {
     win = new BrowserWindow({width: 800, height: 600});
     win.on('closed', () => {
         win = null
-
+        running = false;
     });
     win.loadURL(`file://${__dirname}/../results.html`);
 }

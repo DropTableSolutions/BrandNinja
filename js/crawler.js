@@ -8,18 +8,18 @@ const fs = require('fs');
 const sqlite3 = require('sqlite3');
 //module to allow direct paths to fileSize
 const path = require('path');
+//module to allow electron functionality
 const electron = require('electron');
+
 const BrowserWindow = electron.remote.BrowserWindow;
 
 
-
+//Variables for searches
 var maxDepth;
 var startingSite;
 var keywords;
-var savedName;
-var savedStartingPages;
-var savedKeywords;
-var savedDepth;
+
+//Variables for html objects
 const crawlNameInput = document.querySelector('.crawlNameInput');
 const startUrlInput = document.querySelector('.startUrlInput');
 const crawlDepthInput = document.querySelector('.crawlDepthInput');
@@ -33,12 +33,11 @@ const reportBtn = document.querySelector('#reportBtn');
 const dbPath = path.resolve('C:\\Users\\Ansari\\Documents\\GitHub\\BrandNinja\\Searches.db');
 const saveButton = document.querySelector('#history');
 const loadButton = document.querySelector('#file');
+
 /*
-recursive function for crawling
+Recursive function for crawling
  */
-
 let visited = new Set();
-
 function crawl(startingSite, depth) {
     if (depth < maxDepth) {
         getLinks(startingSite, function (sites) { //pulls all the links from a specific page and returns them as an array of strings
@@ -51,7 +50,7 @@ function crawl(startingSite, depth) {
 }
 
 /*
-runs through a list of sites and tries to find any of the keywords
+Runs through a list of sites and tries to find any of the keywords
  */
 function findTarget(site, depth) {
     findInPage(keywords, site, function (containsATarget, target, url) {
@@ -64,7 +63,7 @@ function findTarget(site, depth) {
     });
 }
 /*
-returns a list of urls found on a parent url page
+Returns a list of urls found on a parent url page
  */
 function getLinks(parentURL, callback) {
     let url = parentURL;
@@ -91,7 +90,7 @@ function getLinks(parentURL, callback) {
 
 
 /*
-returns true if a page contains one of the target keywords, as well as the URL it was found at, and the target itself;
+Returns true if a page contains one of the target keywords, as well as the URL it was found at, and the target itself;
  */
 function findInPage(target, url, callback) {
     if (url != undefined) {
@@ -121,7 +120,7 @@ function findInPage(target, url, callback) {
 
 
 runButton.addEventListener('click', function () {
-	if(validateInputs) {
+	if(validateInputs()) {
 		visited.clear();
 		maxDepth = parseInt(crawlDepthInput.value);
 		crawlName = crawlNameInput.value; //TODO: do something with the name
@@ -139,13 +138,16 @@ function run() {
 let win = null;
 function resultsWindow()
 {
-    win = new BrowserWindow({width: 800, height: 600})
-    win.on('closed', () => {
-        win = null
-    });
-    win.loadURL(`file://${__dirname}/../results.html`);
+	win = new BrowserWindow({width: 800, height: 600})
+	win.on('closed', () => {
+		win = null
+	});
+	win.loadURL(`file://${__dirname}/../results.html`);
 }
 
+/*
+Adds a result to the results window
+*/
 function addToWindow(url, matchedWord)
 {
         win.webContents.send('url', url + '');
@@ -153,7 +155,7 @@ function addToWindow(url, matchedWord)
 }
 
 /*
-clears the input fields
+Clears the input fields
  */
 clearButton.addEventListener('click', function () {
     startingSite = '';
@@ -164,7 +166,9 @@ clearButton.addEventListener('click', function () {
     crawlDepthInput.value = '';
 });
 
-
+/*
+Toggles between themes
+*/
 toggleSwitch.addEventListener('click', function () {
     if (toggleSwitch.checked == false) {
         changeTheme('#4b4b4b', '#ecf0f1');
@@ -175,8 +179,7 @@ toggleSwitch.addEventListener('click', function () {
 });
 
 /*
-changes the theme
-//TODO: remove this, it's not needed
+Changes the theme
  */
 function changeTheme(background, foreground) {
     console.log('Changing theme');
@@ -194,18 +197,24 @@ function changeTheme(background, foreground) {
 Saves searches to the database
  */
 saveButton.addEventListener('click', function () {
-	
+	//Checks for valid inputs
 	if(validateInputs()) {
 		//Gets values from the input fields
-		savedName = crawlNameInput.value;
-		savedStartingPages = startUrlInput.value;
-		savedKeywords = keywordInput.value;
-		savedDepth = crawlDepthInput.value;
+		var savedName = crawlNameInput.value;
+		var savedStartingPages = startUrlInput.value;
+		var savedKeywords = keywordInput.value;
+		var savedDepth = crawlDepthInput.value;
 
+		//Logs the inputs in the console
 		console.log(savedName + savedStartingPages + savedKeywords + savedDepth);
+		
+		//Checks if database is present
 		var exists = fs.existsSync(dbPath);
+		
+		//Logs if the database is present or not
 		console.log("exists: " + exists);
 
+		//Creates the connection to the database
 		let db = new sqlite3.Database('dbPath', (err) => {
 			if (err) {
 				console.error(err.message);
@@ -213,17 +222,16 @@ saveButton.addEventListener('click', function () {
 			console.log('Connected to the Searches database.');
 		});
 
+		//Adds the saved inputs to the database
 		db.serialize(function () {
 
+			//Creates the table if it is not present
 			db.run("CREATE TABLE if not exists saved_searches(name TEXT, links LONGTEXT, keywords LONGTEXT, depth INT)");
 
+			//Prepares the statement to prevent SQL injection and inserts values into the table
 			var stmt = db.prepare("INSERT INTO saved_searches VALUES (?,?,?,?)");
 			stmt.run(savedName, savedStartingPages, savedKeywords, savedDepth);
 			stmt.finalize();
-
-			db.each("SELECT * FROM saved_searches", function (err, row) {
-				console.log(row.name + ", " + row.links + ", " + row.keywords + ", " + row.depth);
-			});
 		});
 
 		db.close();
@@ -239,15 +247,26 @@ loadButton.addEventListener('click', function () {
     window.location.href = path.resolve(__dirname, 'searchSelection.html')
 });
 
+/*
+Validates the inputs to limit errors
+*/
 function validateInputs() {
 	var inputsValid = true;
 	
-	var nameRegEx = new RegExp('[0-9a-zA-Z]');
-	//Found on https://stackoverflow.com/questions/3809401/what-is-a-good-regular-expression-to-match-a-url
-	var siteRegEx = new RegExp('(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9]\.[^\s]{2,})');
+	//Regex for each input field
+	//Allows any letters or numbers for search name
+	var nameRegEx = new RegExp('[0-9a-zA-Z ]');
+	
+	//Allows any website in the format 'http(s)://www.(letters or numbers or '-').(letters)/(letters or numbers)
+	var siteRegEx = new RegExp('(https|http):\/\/www.[a-zA-Z0-9-]+\.[^\s]{2,}(\/[a-zA-Z0-9-]+)?');
+	
+	//Allows comma seperated keywords made of numbers and letters
 	var keyRegEx = new RegExp('[0-9a-zA-Z]+(,[0-9a-zA-Z]+)*');
+	
+	//Allows any number for depth
 	var depthRegEx = new RegExp('^[0-9]+$');
 	
+	//Gets the values from the input fields
 	var nameInput = crawlNameInput.value;
     var startInput = startUrlInput.value;
     var keyInput = keywordInput.value;

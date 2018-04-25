@@ -292,5 +292,3 @@ function validateInputs() {
 	
 	return inputsValid;
 }
-
-

@@ -12,7 +12,6 @@ const electron = require('electron');
 const BrowserWindow = electron.remote.BrowserWindow;
 
 
-
 var maxDepth;
 var startingSite;
 var keywords;
@@ -43,7 +42,7 @@ function crawl(startingSite, depth) {
     if (depth < maxDepth) {
         getLinks(startingSite, function (sites) { //pulls all the links from a specific page and returns them as an array of strings
             for (var i = 0; i < sites.length; i++) { //for each string we got from the page
-                findTarget(sites[i], depth); //find any of the keywords we want on the page, print out if so
+                findTarget(sites[i]); //find any of the keywords we want on the page, print out if so
                 crawl(sites[i], depth + 1); //crawl all the pages on that page, and increase the depth
             }
         });
@@ -53,16 +52,15 @@ function crawl(startingSite, depth) {
 /*
 runs through a list of sites and tries to find any of the keywords
  */
-function findTarget(site, depth) {
+function findTarget(site) {
     findInPage(keywords, site, function (containsATarget, target, url) {
-        if (containsATarget) {
+        if (containsATarget && target != undefined) {
             //TODO: PRINT TO FILE
-            //writeToFile("Matched a keyword: " + target + " at: " + url + " with a depth of: " + (depth + 1));
-            //console.log("Matched a keyword: " + target + " at: " + url + " with a depth of: " + (depth + 1));
             addToWindow(url, target);
         }
     });
 }
+
 /*
 returns a list of urls found on a parent url page
  */
@@ -101,16 +99,24 @@ function findInPage(target, url, callback) {
                 var bodyText = $('html > body').text().toLowerCase();
                 let htmlBodySet = new Set(bodyText.split(' '));
                 var htmlBody = Array.from(htmlBodySet);
-                var targets = target.split(',');
-                for (var i = 0; i < targets.length; i++) {
-                    targets[i].trim();
-                    console.log("SEARCHING: " + targets[i]);
-                    if(htmlBody.includes(target[i]))
-                    {
-                        console.log("MATCH: " + targets[i]  + " at: " + url);
-                        return callback(true, targets[i], url);
+                var targets = target.toLowerCase().split(',');
+                var found = false;
+                var results = [];
+                for (var i = 0; i < htmlBody.length; i++) {
+                    var temp = htmlBody[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+                    var text = temp.replace(/\s{2,}/g, " ");
+                    for (var j = 0; j < targets.length; j++) {
+                        targets[j].trim();
+                        if (text.localeCompare(targets[j]) === 0) {
+                            found = true;
+                            results.push(targets[j]);
+                        }
                     }
                 }
+                let resultSet = new Set(results);
+                let arr = Array.from(resultSet);
+                arr.sort();
+                return callback(found, arr.join('-'), url);
             }
         });
     }
@@ -134,21 +140,23 @@ function run() {
     crawl(startingSite, 0);
     resultsWindow();
 }
+
 let win = null;
-function resultsWindow()
-{
-    win = new BrowserWindow({width: 800, height: 600})
+
+function resultsWindow() {
+    win = new BrowserWindow({width: 800, height: 600});
     win.on('closed', () => {
         win = null
+
     });
     win.loadURL(`file://${__dirname}/../results.html`);
 }
 
-function addToWindow(url, matchedWord)
-{
-        win.webContents.send('url', url + '');
-        win.webContents.send('matchedWord', matchedWord + '');
+function addToWindow(url, matchedWord) {
+    win.webContents.send('url', url + '');
+    win.webContents.send('matchedWord', matchedWord + '');
 }
+
 /*
 clears the input fields
  */

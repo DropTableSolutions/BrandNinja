@@ -93,7 +93,7 @@ p {
 
 .notifications {
   top: 68.45%;
-  height: 55px;
+  height: 40px;
 }
 
 .notifications p {
@@ -186,6 +186,19 @@ input:checked + .slider:before {
 
 .statusRunning {
   animation: statusRunning 1.4s ease-out 0s infinite;
+}
+
+#reportBtn {
+  border: none;
+  cursor: pointer;
+  background: #e74c3c;
+  position: absolute;
+  left: 52%; top: 19.7%;
+  font-size: 10.5px;
+  height: 25px;
+  width: 100px;
+  color: #ecf0f1;
+  opacity: 0;
 }
 
 #run {

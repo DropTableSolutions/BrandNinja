@@ -21,7 +21,7 @@ ipc.on('url', (event, message) => {
   urlContainer.innerHTML = message;
 
   urlContainer.addEventListener('click', function() {
-    opn(message, { app: 'safari' }); // change to whatever browser you want.
+    opn(message); //Opens with default browser
   });
 });
 

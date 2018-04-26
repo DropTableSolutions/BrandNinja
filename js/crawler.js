@@ -174,7 +174,7 @@ function addToWindow(url, matchedWord) {
 }
 
 /*
-clears the input fields
+Clears the input fields
  */
 clearButton.addEventListener('click', function () {
     startingSite = '';
@@ -216,6 +216,7 @@ function changeTheme(background, foreground) {
 Saves search to database
  */
 saveButton.addEventListener('click', function () {
+	//Gets values from input fields
     savedName = crawlNameInput.value;
     savedStartingPages = startUrlInput.value;
     savedKeywords = keywordInput.value;
@@ -225,6 +226,7 @@ saveButton.addEventListener('click', function () {
     var exists = fs.existsSync(dbPath);
     console.log("exists: " + exists);
 
+	//Creates connection to database
     let db = new sqlite3.Database('dbPath', (err) => {
         if (err) {
             console.error(err.message);
@@ -232,19 +234,26 @@ saveButton.addEventListener('click', function () {
         console.log('Connected to the Searches database.');
     });
 
+	//Adds values to the database
     db.serialize(function () {
 
+		//Ensures table exists
         db.run("CREATE TABLE if not exists saved_searches(name TEXT, links LONGTEXT, keywords LONGTEXT, depth INT)");
 
+		//Prepares statement
         var stmt = db.prepare("INSERT INTO saved_searches VALUES (?,?,?,?)");
+		
+		//Adds to table
         stmt.run(savedName, savedStartingPages, savedKeywords, savedDepth);
         stmt.finalize();
 
+		//Prints table contents to console for debugging
         db.each("SELECT * FROM saved_searches", function (err, row) {
             console.log(row.name + ", " + row.links + ", " + row.keywords + ", " + row.depth);
         });
     });
 
+	//Closes database connection
     db.close();
 
     notification.innerHTML = 'Search saved.';
@@ -254,6 +263,7 @@ saveButton.addEventListener('click', function () {
 Clears all saved searches in the database
 */
 clearDBButton.addEventListener('click', function() {
+	//Creates connection to database
 	let db = new sqlite3.Database('dbPath', (err) => {
         if (err) {
             console.error(err.message);
@@ -261,10 +271,12 @@ clearDBButton.addEventListener('click', function() {
         console.log('Connected to the Searches database.');
     });
 
+	//Clears the table by dropping it
     db.serialize(function () {
         db.run("DROP TABLE saved_searches");
     });
 
+	//Closes the database connection
     db.close();
 });
 

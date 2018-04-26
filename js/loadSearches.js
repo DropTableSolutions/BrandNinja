@@ -12,11 +12,13 @@ const dbPath = path.resolve('C:\\Users\Ansari\\Documents\\GitHub\\BrandNinja\\Se
 
 function loadSearches() {
 
+	//Adds back button
     searches.innerHTML = ("<div style=\"color:#444; border:1px solid #CCC; background:#DDD; box-shadow: 0 0 5px -1px rgba(0,0,0,0.2);" +
         "cursor:pointer; vertical-align:middle;\" onclick=\"loadSearchInfo('','','','')\">" +
         "<p style=\"text-align:center; color:Red\">" + "< Back" + "</p>" +
         "</div>");
 
+	//Opens database connection
     let db = new sqlite3.Database('dbPath', sqlite3.OPEN_READWRITE, (err) => {
         if (err) {
             console.error(err.message);
@@ -24,6 +26,7 @@ function loadSearches() {
         console.log('Connected to the Searches database.');
     });
 
+	//Adds each saved search to the page
     db.serialize(function() {
         db.each("SELECT * FROM saved_searches", function(err, row) {
             searches.innerHTML += ("<div style=\"color:#444; border:1px solid #CCC; background:#DDD; box-shadow: 0 0 5px -1px rgba(0,0,0,0.2);" +
@@ -33,6 +36,7 @@ function loadSearches() {
         });
     });
 
+	//Closes teh database connection
     db.close();
 };
 

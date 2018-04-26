@@ -8,10 +8,12 @@ const fs = require('fs');
 const sqlite3 = require('sqlite3');
 //module to allow direct paths to fileSize
 const path = require('path');
+//Module to allow electron functionality
 const electron = require('electron');
+//New browser window for results
 const BrowserWindow = electron.remote.BrowserWindow;
 
-
+//Variables for search info
 var maxDepth;
 var startingSite;
 var keywords;
@@ -20,6 +22,8 @@ var savedStartingPages;
 var savedKeywords;
 var savedDepth;
 var running;
+
+//Variables for UI elements
 const crawlNameInput = document.querySelector('.crawlNameInput');
 const startUrlInput = document.querySelector('.startUrlInput');
 const crawlDepthInput = document.querySelector('.crawlDepthInput');
@@ -33,10 +37,11 @@ const reportBtn = document.querySelector('#reportBtn');
 const dbPath = path.resolve('C:\\Users\\Ansari\\Documents\\GitHub\\BrandNinja\\Searches.db');
 const saveButton = document.querySelector('#history');
 const loadButton = document.querySelector('#file');
+const clearDBButton = document.querySelector('#clearDatabase');
+
 /*
 recursive function for crawling
  */
-
 let visited = new Set();
 
 function crawl(startingSite, depth) {
@@ -127,7 +132,9 @@ function findInPage(target, url, callback) {
     }
 }
 
-
+/*
+Starts the crawl
+*/
 runButton.addEventListener('click', function () {
     visited.clear();
     maxDepth = parseInt(crawlDepthInput.value);
@@ -146,6 +153,9 @@ function run() {
 
 let win = null;
 
+/*
+Creates new window for search results to go on
+*/
 function resultsWindow() {
     win = new BrowserWindow({width: 800, height: 600});
     win.on('closed', () => {
@@ -155,13 +165,16 @@ function resultsWindow() {
     win.loadURL(`file://${__dirname}/../results.html`);
 }
 
+/*
+Adds search results to the results window
+*/
 function addToWindow(url, matchedWord) {
     win.webContents.send('url', url + '');
     win.webContents.send('matchedWord', matchedWord + '');
 }
 
 /*
-clears the input fields
+Clears the input fields
  */
 clearButton.addEventListener('click', function () {
     startingSite = '';
@@ -172,7 +185,9 @@ clearButton.addEventListener('click', function () {
     crawlDepthInput.value = '';
 });
 
-
+/*
+Button which switches theme
+*/
 toggleSwitch.addEventListener('click', function () {
     if (toggleSwitch.checked == false) {
         changeTheme('#4b4b4b', '#ecf0f1');
@@ -183,8 +198,7 @@ toggleSwitch.addEventListener('click', function () {
 });
 
 /*
-changes the theme
-//TODO: remove this, it's not needed
+Changes the theme
  */
 function changeTheme(background, foreground) {
     console.log('Changing theme');
@@ -199,10 +213,10 @@ function changeTheme(background, foreground) {
 }
 
 /*
-Saves to database?
-//TODO: documentation, possibly split up into multiple functions
+Saves search to database
  */
 saveButton.addEventListener('click', function () {
+	//Gets values from input fields
     savedName = crawlNameInput.value;
     savedStartingPages = startUrlInput.value;
     savedKeywords = keywordInput.value;
@@ -212,6 +226,7 @@ saveButton.addEventListener('click', function () {
     var exists = fs.existsSync(dbPath);
     console.log("exists: " + exists);
 
+	//Creates connection to database
     let db = new sqlite3.Database('dbPath', (err) => {
         if (err) {
             console.error(err.message);
@@ -219,29 +234,56 @@ saveButton.addEventListener('click', function () {
         console.log('Connected to the Searches database.');
     });
 
+	//Adds values to the database
     db.serialize(function () {
 
+		//Ensures table exists
         db.run("CREATE TABLE if not exists saved_searches(name TEXT, links LONGTEXT, keywords LONGTEXT, depth INT)");
 
+		//Prepares statement
         var stmt = db.prepare("INSERT INTO saved_searches VALUES (?,?,?,?)");
+		
+		//Adds to table
         stmt.run(savedName, savedStartingPages, savedKeywords, savedDepth);
         stmt.finalize();
 
+		//Prints table contents to console for debugging
         db.each("SELECT * FROM saved_searches", function (err, row) {
             console.log(row.name + ", " + row.links + ", " + row.keywords + ", " + row.depth);
         });
     });
 
+	//Closes database connection
     db.close();
 
     notification.innerHTML = 'Search saved.';
 });
 
 /*
-TODO: flesh this out
+Clears all saved searches in the database
+*/
+clearDBButton.addEventListener('click', function() {
+	//Creates connection to database
+	let db = new sqlite3.Database('dbPath', (err) => {
+        if (err) {
+            console.error(err.message);
+        }
+        console.log('Connected to the Searches database.');
+    });
+
+	//Clears the table by dropping it
+    db.serialize(function () {
+        db.run("DROP TABLE saved_searches");
+    });
+
+	//Closes the database connection
+    db.close();
+});
+
+/*
+Opens a window with saved searches on it
  */
 loadButton.addEventListener('click', function () {
     window.location.href = path.resolve(__dirname, 'searchSelection.html')
 });
-
 

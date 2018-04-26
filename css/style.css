@@ -210,7 +210,7 @@ input:checked + .slider:before {
 #file {
   top: 32%; left: 10%;
 }
-#clear {
+#clear, #clearDatabase {
   top: 32%; left: 10%;
 }
 
